@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+# This is the exact 'router' variable that main.py is looking for!
 router = APIRouter()
 
 tasks = []
