@@ -1,0 +1,36 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login ACR
+        run: az acr login --name taskmanagementacr
+
+      - name: Build image
+        run: |
+          docker build -t taskmanagementacr.azurecr.io/task-manager:latest ./backend
+
+      - name: Push image
+        run: |
+          docker push taskmanagementacr.azurecr.io/task-manager:latest
+
+      - name: Deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: api-cloud-task-manager
+          images: taskmanagementacr.azurecr.io/task-manager:latest
