@@ -1,21 +1,22 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
 import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "test.db")
+# 1. Đọc DATABASE_URL từ môi trường (Nếu sau này có tạo Postgres trên Azure)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-SQLALCHEMY_DATABASE_URL = f"sqlite:///{DB_PATH}"
+connect_args = {}
 
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
+# 2. Nếu chưa tạo DB trên Azure (biến DATABASE_URL trống), tự động fallback về SQLite
+if not DATABASE_URL or DATABASE_URL.strip() == "":
+    # Sử dụng cú pháp tương đối chuẩn, không dùng os.path.abspath để tránh lỗi phân tách URI trên Linux
+    DATABASE_URL = "sqlite:///./test.db"
+    connect_args = {"check_same_thread": False}
+    print("--> [DATABASE] Cấu hình trống. Tự động chạy SQLite tạm thời: ./test.db")
+else:
+    print(f"--> [DATABASE] Đang kết nối tới Production DB: {DATABASE_URL}")
 
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine
-)
-
+# 3. Khởi tạo Engine
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
